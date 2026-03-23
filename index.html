@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy 18th, Amanda!</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+            --card-bg: rgba(255, 182, 193, 0.4); 
+            --text-main: #5C3A3A;
+            --text-highlight: #D81B60; 
+            --accent-pink: #FF69B4;
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-family-serif: "Georgia", serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            font-family: var(--font-family-sans);
+            text-align: center;
+            color: var(--text-main);
+            overflow: hidden; /* Prevents scrollbars when the box moves */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Container for the gift box (initial state) */
+        #gift-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 1s ease;
+        }
+
+        #gift-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* The new wrapper that moves around the screen */
+        #moving-target {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            /* Centers the box perfectly to start */
+            transform: translate(-50%, -50%);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gift-box {
+            width: 150px;
+            height: 150px;
+            background-color: var(--accent-pink);
+            position: relative;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+
+        /* Ribbon on top */
+        .gift-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 50px;
+            height: 50px;
+            background-color: var(--text-highlight);
+            border-radius: 5px 5px 0 0;
+        }
+
+        /* Center cross-ribbon */
+        .gift-box-ribbon {
+            position: absolute;
+            background-color: var(--text-highlight);
+        }
+        
+        .gift-box-ribbon.horizontal {
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            width: 100%;
+            height: 20px;
+        }
+
+        .gift-box-ribbon.vertical {
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 100%;
+        }
+
+        .instruction {
+            font-family: var(--font-family-sans);
+            font-size: 1.2em;
+            color: var(--text-highlight);
+            margin-top: 30px;
+            background: rgba(255,255,255,0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        /* The birthday card (revealed state) */
+        #card-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 1.5s ease 0.5s, transform 1.2s ease 0.5s;
+        }
+
+        #card-container.reveal {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            padding: 30px 20px;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(135, 31, 60, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 85%;
+            max-width: 400px;
+            max-height: 80vh; /* Keeps card from stretching past screen */
+            overflow-y: auto; /* Enables scrolling for long text */
+            transition: box-shadow 0.3s ease;
+        }
+
+        .glass-card::-webkit-scrollbar { width: 6px; }
+        .glass-card::-webkit-scrollbar-track { background: transparent; }
+        .glass-card::-webkit-scrollbar-thumb {
+            background: rgba(216, 27, 96, 0.3);
+            border-radius: 10px;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 12px 48px 0 rgba(135, 31, 60, 0.25);
+        }
+
+        .photo-frame {
+            border: 10px solid var(--accent-pink);
+            border-radius: 20px;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .photo-frame img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+            font-family: var(--font-family-serif);
+            letter-spacing: -0.5px;
+            background: -webkit-linear-gradient(45deg, var(--text-highlight), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .age-highlight {
+            font-size: 5em;
+            font-weight: 800;
+            font-family: var(--font-family-serif);
+            margin: 10px 0;
+            line-height: 1;
+            color: var(--text-highlight);
+        }
+
+        p {
+            font-size: 1.15em;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            color: #555;
+            font-family: var(--font-family-serif);
+        }
+
+        .signature {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--text-highlight);
+            font-family: var(--font-family-serif);
+        }
+
+        @media (min-width: 768px) {
+            .glass-card { padding: 60px 50px; }
+            .photo-frame { max-width: 300px; }
+            h1 { font-size: 2.8em; }
+            .age-highlight { font-size: 6em; }
+            p { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gift-container">
+        <div id="moving-target" onclick="registerTap()">
+            <div class="gift-box">
+                <div class="gift-box-ribbon horizontal"></div>
+                <div class="gift-box-ribbon vertical"></div>
+            </div>
+            <div class="instruction">Amanda, tap to open!</div>
+        </div>
+    </div>
+
+    <div id="card-container">
+        <div class="glass-card">
+            <div class="photo-frame">
+                <img src="us.jpg" alt="Fred and Amanda">
+            </div>
+            
+            <h1>Happy Birthday,<br>Amanda!</h1>
+            <div class="age-highlight">18</div>
+            <p>Dear Amanda, or more specifically, Baby, today you have officially become an adult! But to me, you will always be my baby who I have been so in love with since the day that I met you 706 days ago. Just know that wherever life takes us, whatever good times and hardships come our way, I will always be here to support you and love you unconditionally as a best friend, boyfriend, and husband. So go and enjoy your birthday! But not too much, because in just a very short 11 days, a certain someone will be here to make it unforgettable. 😏</p>
+            <div class="signature">Love, Fred</div>
+        </div>
+    </div>
+
+    <script>
+        let tapsRemaining = 18; 
+        
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTapSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playPartySound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const notes = [261.63, 329.63, 392.00, 523.25]; 
+            
+            notes.forEach((freq, index) => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.type = 'triangle';
+                oscillator.frequency.value = freq;
+                
+                const startTime = audioCtx.currentTime + (index * 0.1);
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, startTime + 0.4);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.4);
+            });
+        }
+
+        function registerTap() {
+            const box = document.querySelector('.gift-box');
+            const target = document.getElementById('moving-target');
+            const instruction = document.querySelector('.instruction');
+
+            // 1. Audio and Visual bump
+            playTapSound();
+            box.style.transform = 'scale(0.85)';
+            box.style.filter = 'brightness(1.5)';
+            
+            setTimeout(() => {
+                box.style.transform = 'scale(1)';
+                box.style.filter = 'brightness(1)';
+            }, 120);
+
+            tapsRemaining--;
+
+            if (tapsRemaining > 0) {
+                // 2. Calculate safe bounds so it doesn't jump off screen
+                const safeX = (window.innerWidth - 200) / 2; 
+                const safeY = (window.innerHeight - 250) / 2;
+                
+                // Generate a random position within those bounds
+                const randomX = (Math.random() * 2 - 1) * safeX;
+                const randomY = (Math.random() * 2 - 1) * safeY;
+                
+                // Move the target
+                target.style.transform = `translate(calc(-50% + ${randomX}px), calc(-50% + ${randomY}px))`;
+
+                // Update the text
+                if (tapsRemaining === 1) {
+                    instruction.innerText = "1 more tap!";
+                } else {
+                    instruction.innerText = `Keep going! ${tapsRemaining} taps left!`;
+                }
+            } else {
+                // Return to center immediately before opening
+                target.style.transform = 'translate(-50%, -50%)';
+                setTimeout(openGift, 200); // slight delay to center before popping
+            }
+        }
+
+        function openGift() {
+            playPartySound();
+            document.getElementById('gift-container').classList.add('hidden');
+            document.getElementById('card-container').classList.add('reveal');
+            triggerConfetti();
+        }
+
+        function triggerConfetti() {
+            var duration = 4 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount,
+                    colors: ['#D81B60', '#FF69B4', '#FFDEE9', '#FFD700', '#F0E68C'],
+                    origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+                }));
+                confetti(Object.assign({}, defaults, { particleCount,
+                    colors: ['#D81B60', '#FF69B4', '#FFDEE9', '#FFD700', '#F0E68C'],
+                    origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+                }));
+            }, 250);
+        }
+    </script>
+</body>
+</html>
